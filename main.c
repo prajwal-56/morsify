@@ -162,7 +162,6 @@ void blink_phrase(char phrase[1024]){
 // to turn of the led
 void init(){
     printf("prepping up...");
-    // system("echo 0 | sudo tee /sys/class/leds/tpacpi::lid_logo_dot/brightness");
 
     FILE *f = fopen(LID_LED_FILE_PATH , "w");
 
@@ -171,21 +170,23 @@ void init(){
         return;
     }
 
-
     fprintf(f , "0");
     fclose(f);
+
+    printf("Ready ! Enter your message \n");
 
 }
 
 
 int main(){
 
-    char phrase[1024];
+    char phrase[1024] = {0};
 
     init(); 
 
     while( strcmp(phrase , "\\q") != 0){
 
+        if( phrase == "\\q") {printf("Nice knowing ya\n"); return 0;}
         printf("~ $ ");
         fgets( phrase, sizeof(phrase) , stdin );
         phrase[ strcspn( phrase , "\n")  ] = '\0';
