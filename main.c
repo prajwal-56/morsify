@@ -186,17 +186,12 @@ int main(){
 
     while( strcmp(phrase , "\\q") != 0){
 
+        printf("~ $ ");
         fgets( phrase, sizeof(phrase) , stdin );
         phrase[ strcspn( phrase , "\n")  ] = '\0';
         blink_phrase(phrase);
 
     }
-
-    dot();
-    sleep(2);
-    // dash();
-    dash();
-    // dot();
 
 
     return 0;
