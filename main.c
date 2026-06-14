@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <time.h>
+#include <ctype.h>
 
 #define LID_LED_FILE_PATH "/sys/devices/platform/thinkpad_acpi/leds/tpacpi::lid_logo_dot/brightness"
 
@@ -10,13 +11,6 @@ struct Morsemap {
     char symbol;
     char m_code[10];
 };
-
-struct timespec char_gap = {0 ,  300000000};     // off time between letters
-struct timespec word_gap = {0 ,  500000000};     // off time between words
-struct timespec sym_gap  = {0 ,  500000000};     // off time between dots/dashes within a letter
-struct timespec dot_duration  = {0 ,  200000000};     // how long a the light stays ON for a dot
-struct timespec dash_duration  = {0 ,  600000000};     // how long a the light stays ON for a dash
-
 
 struct Morsemap morse_table[] = {
     {'A', "01"},
@@ -63,10 +57,18 @@ struct Morsemap morse_table[] = {
     {'@', "011010"},
     {'=', "10001"},
     {'-', "100001"},
-    {'+', "01010"},
+    {'+', "01010"}
 };
 
 int morse_table_size = sizeof(morse_table) / sizeof(morse_table[0]);
+
+
+struct timespec char_gap = {0 ,  300000000};     // off time between letters
+struct timespec word_gap = {0 ,  500000000};     // off time between words
+struct timespec sym_gap  = {0 ,  500000000};     // off time between dots/dashes within a letter
+struct timespec dot_duration  = {0 ,  200000000};     // how long a the light stays ON for a dot
+struct timespec dash_duration  = {0 ,  600000000};     // how long a the light stays ON for a dash
+
 
 
 void turn_on(){
@@ -114,20 +116,48 @@ void dash(){
 
 }
 
-// void blink_led( char state[1]){
 
-//     if(*state == '0'){
-//         turn_off();
-//         nanosleep();
-//         turn_on();
 
-//     } else  if( *state == '1' ) {
-//         system("echo 1 | sudo tee /sys/class/leds/tpacpi::lid_logo_dot/brightness");
-//         system("nanosleep 0.5");
+// takes the binary string (m_code) -> iterate through the symbols (0/1) -> blink according to which symbol it is 
+void blink_letter(char letter[10]){
+    
+    for( int i = 0; letter[i] != '\0'; i++){
+        if (letter[i] == '0'){
+            dot();
+            nanosleep(&sym_gap , NULL); // pause time after each symbol
+        } else if (letter[i] == '1'){
+            dash();
+            nanosleep(&sym_gap , NULL); // pause time after each symbol
+        }
+    }
+    nanosleep(&char_gap , NULL); // pause time after each letter
+    return;
+}
 
-//     }
+// finds the morse code of a given character , blinks the led.
+void blink_char(char c ){
+    
+    if( toupper(c) == ' '){
+        nanosleep(&word_gap, NULL);
+    } 
+    
+    for(int i =0; i < morse_table_size; i++){
+        if(toupper(c) == morse_table[i].symbol){
+            blink_letter(morse_table[i].m_code);
+            return;
+        } 
+    }
+}
 
-// }
+
+// takes the whole phrase -> blinks the led for each character
+void blink_phrase(char phrase[1024]){
+
+    for( int i = 0; i < strlen(phrase); i++){
+        blink_char(phrase[i]);
+    }
+}
+
 
 // to turn of the led
 void init(){
@@ -154,16 +184,13 @@ int main(){
 
     init(); 
 
-    // while(phrase != '\q'){
+    while( strcmp(phrase , "\\q") != 0){
 
-    //     fgets( phrase, sizeof(phrase) , stdin );
+        fgets( phrase, sizeof(phrase) , stdin );
+        phrase[ strcspn( phrase , "\n")  ] = '\0';
+        blink_phrase(phrase);
 
-    //     phrase[ strcspn() phrase , "\n"  ] = "\0";
-
-    //     gen
-
-
-    // }
+    }
 
     dot();
     sleep(2);
